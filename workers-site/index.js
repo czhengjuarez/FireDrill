@@ -1,63 +1,57 @@
+import { getAssetFromKV } from '@cloudflare/kv-asset-handler'
+
 export default {
   async fetch(request, env, ctx) {
-    const event = { request, env, ctx }
-    return handleEvent(event)
-  }
-}
-
-async function handleEvent(event) {
-  const url = new URL(event.request.url)
-  const { pathname } = url
-  
-  // Handle API routes for project management
-  if (pathname.startsWith('/api/')) {
-    return handleApiRequest(event)
-  }
-  
-  // Serve static files from R2 bucket
-  try {
-    const bucket = event.env.FIRE_DRILL_PROJECTS
-    let assetKey = pathname === '/' ? 'index.html' : pathname.substring(1)
+    const url = new URL(request.url)
+    const { pathname } = url
     
-    // Try to get the asset from R2
-    let object = await bucket.get(assetKey)
-    
-    if (!object) {
-      // For SPA routing, serve index.html for non-asset routes
-      object = await bucket.get('index.html')
-      if (!object) {
-        return new Response('App not found', { status: 404 })
-      }
+    // Handle API routes for project management
+    if (pathname.startsWith('/api/')) {
+      return handleApiRequest(request, env)
     }
     
-    // Determine content type
-    let contentType = 'text/plain'
-    if (assetKey.endsWith('.html')) contentType = 'text/html'
-    else if (assetKey.endsWith('.js')) contentType = 'application/javascript'
-    else if (assetKey.endsWith('.css')) contentType = 'text/css'
-    else if (assetKey.endsWith('.svg')) contentType = 'image/svg+xml'
-    else if (assetKey.endsWith('.png')) contentType = 'image/png'
-    else if (assetKey.endsWith('.jpg') || assetKey.endsWith('.jpeg')) contentType = 'image/jpeg'
-    
-    return new Response(object.body, {
-      headers: {
-        'Content-Type': contentType,
-        'Cache-Control': 'public, max-age=3600',
-        'X-XSS-Protection': '1; mode=block',
-        'X-Content-Type-Options': 'nosniff',
-        'X-Frame-Options': 'DENY'
+    // Serve static assets using KV asset handler
+    try {
+      return await getAssetFromKV(
+        {
+          request,
+          waitUntil: ctx.waitUntil?.bind(ctx),
+        }
+      )
+    } catch (e) {
+      // If asset not found, serve index.html for SPA routing
+      if (pathname !== '/' && !pathname.includes('.')) {
+        try {
+          const indexRequest = new Request(`${url.origin}/index.html`, request)
+          
+          const response = await getAssetFromKV(
+            {
+              request: indexRequest,
+              waitUntil: ctx.waitUntil?.bind(ctx),
+            }
+          )
+          
+          return new Response(response.body, {
+            headers: {
+              'Content-Type': 'text/html',
+              'Cache-Control': 'no-cache',
+            },
+            status: 200,
+          })
+        } catch (e) {
+          return new Response(`SPA fallback failed: ${e.message}`, { status: 404 })
+        }
       }
-    })
-    
-  } catch (error) {
-    return new Response('Error loading page: ' + error.message, { status: 500 })
+      
+      return new Response(`Asset not found: ${pathname} - ${e.message}`, { status: 404 })
+    }
   }
 }
 
-async function handleApiRequest(event) {
-  const url = new URL(event.request.url)
-  const { pathname, searchParams } = url
-  const method = event.request.method
+async function handleApiRequest(request, env) {
+  const url = new URL(request.url)
+  const { pathname } = url
+  const method = request.method
 
   // CORS headers
   const corsHeaders = {
@@ -74,36 +68,36 @@ async function handleApiRequest(event) {
     // Project management endpoints
     if (pathname === '/api/projects') {
       if (method === 'GET') {
-        return await listProjects(event.env, corsHeaders)
+        return await listProjects(env, corsHeaders)
       } else if (method === 'POST') {
-        return await createProject(event.request, event.env, corsHeaders)
+        return await createProject(request, env, corsHeaders)
       }
     } else if (pathname.startsWith('/api/projects/')) {
       const projectId = pathname.split('/')[3]
       if (method === 'GET') {
-        return await getProject(projectId, event.env, corsHeaders)
+        return await getProject(projectId, env, corsHeaders)
       } else if (method === 'PUT') {
-        return await updateProject(event.request, projectId, event.env, corsHeaders)
+        return await updateProject(request, projectId, env, corsHeaders)
       } else if (method === 'DELETE') {
-        return await deleteProject(projectId, event.env, corsHeaders)
+        return await deleteProject(projectId, env, corsHeaders)
       }
     }
     
     // Custom roles endpoints
     else if (pathname === '/api/custom-roles') {
       if (method === 'GET') {
-        return await listCustomRoles(event.env, corsHeaders)
+        return await listCustomRoles(env, corsHeaders)
       } else if (method === 'POST') {
-        return await createCustomRole(event.request, event.env, corsHeaders)
+        return await createCustomRole(request, env, corsHeaders)
       }
     } else if (pathname.startsWith('/api/custom-roles/')) {
       const roleId = pathname.split('/')[3]
       if (method === 'GET') {
-        return await getCustomRole(roleId, event.env, corsHeaders)
+        return await getCustomRole(roleId, env, corsHeaders)
       } else if (method === 'PUT') {
-        return await updateCustomRole(event.request, roleId, event.env, corsHeaders)
+        return await updateCustomRole(request, roleId, env, corsHeaders)
       } else if (method === 'DELETE') {
-        return await deleteCustomRole(roleId, event.env, corsHeaders)
+        return await deleteCustomRole(roleId, env, corsHeaders)
       }
     }
 
