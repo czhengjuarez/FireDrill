@@ -59,25 +59,21 @@ const InjectCard = ({ inject, playerRoles, onSubmitResponse, existingResponse })
       <div className="p-6">
         <div className="mb-6">
           <h4 className="font-semibold text-gray-900 mb-2">Incident Details</h4>
-          <p className="text-gray-700 leading-relaxed">{inject.content}</p>
+          <p className="text-gray-700 leading-relaxed text-left">{inject.content}</p>
         </div>
 
         {/* Target Role Info */}
         {targetRole && (
-          <div className="mb-6 p-4 bg-blue-50 rounded-lg">
-            <h4 className="font-semibold text-blue-900 mb-2 flex items-center">
+          <div className="mb-6 p-4 bg-gray-50 rounded-lg">
+            <h4 className="font-semibold text-gray-900 mb-2 flex items-center">
               <span className="mr-2">{targetRole.icon}</span>
               You are responding as: {targetRole.name}
             </h4>
-            <p className="text-blue-800 text-sm">{targetRole.description}</p>
+            <p className="text-gray-800 text-sm">{targetRole.description}</p>
           </div>
         )}
 
         {/* Response Section */}
-        {/* Debug info */}
-        <div className="mb-2 text-xs text-gray-400">
-          Debug: existingResponse={existingResponse ? 'yes' : 'no'}, showResponseForm={showResponseForm ? 'yes' : 'no'}
-        </div>
         
         {existingResponse && !showResponseForm ? (
           <div className="border-t pt-6">
@@ -138,7 +134,7 @@ const InjectCard = ({ inject, playerRoles, onSubmitResponse, existingResponse })
                 value={response}
                 onChange={(e) => setResponse(e.target.value)}
                 rows={4}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50 text-gray-900"
                 placeholder="Describe your response to this incident inject..."
               />
             </div>
@@ -156,7 +152,7 @@ const InjectCard = ({ inject, playerRoles, onSubmitResponse, existingResponse })
               <button
                 onClick={handleSubmit}
                 disabled={!response.trim() || !selectedNistCategory}
-                className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+                className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
               >
                 Submit Response
               </button>

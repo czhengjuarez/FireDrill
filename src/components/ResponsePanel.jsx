@@ -86,7 +86,7 @@ const ResponsePanel = ({ responses, scenarioInjects, nistFramework }) => {
 
       {responseCount === 0 && (
         <div className="text-center py-6">
-          <div className="text-gray-400 text-4xl mb-2">📝</div>
+          <div className="w-12 h-px bg-gray-300 mx-auto mb-4"></div>
           <p className="text-sm text-gray-500">No responses yet</p>
           <p className="text-xs text-gray-400">Submit responses to track your progress</p>
         </div>

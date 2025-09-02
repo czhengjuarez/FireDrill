@@ -1,11 +1,14 @@
+import React from 'react'
+import Icon from './Icon'
+
 const GameLog = ({ gameLog }) => {
   const getLogIcon = (type) => {
     switch (type) {
-      case 'game_start': return '🚀'
-      case 'inject_revealed': return '⚠️'
-      case 'response_submitted': return '✅'
-      case 'game_end': return '🏁'
-      default: return '📝'
+      case 'game_start': return <Icon name="rocket" className="w-4 h-4 text-blue-600" />
+      case 'inject_revealed': return <Icon name="alert" className="w-4 h-4 text-orange-600" />
+      case 'response_submitted': return <Icon name="checkCircle" className="w-4 h-4 text-green-600" />
+      case 'game_end': return <Icon name="flag" className="w-4 h-4 text-purple-600" />
+      default: return <Icon name="document" className="w-4 h-4 text-gray-600" />
     }
   }
 
@@ -26,8 +29,8 @@ const GameLog = ({ gameLog }) => {
       {gameLog.length > 0 ? (
         <div className="space-y-3 max-h-64 overflow-y-auto">
           {gameLog.slice().reverse().map((entry, index) => (
-            <div key={index} className="flex items-start space-x-3 p-2 hover:bg-gray-50 rounded-md">
-              <div className="text-lg">{getLogIcon(entry.type)}</div>
+            <div key={index} className="flex items-start space-x-3">
+              <div className="mt-0.5">{getLogIcon(entry.type)}</div>
               <div className="flex-1 min-w-0">
                 <p className={`text-sm font-medium ${getLogColor(entry.type)}`}>
                   {entry.message}

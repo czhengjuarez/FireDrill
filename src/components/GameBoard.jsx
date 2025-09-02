@@ -3,6 +3,7 @@ import { injectCards, roles, nistFramework } from '../data/gameData'
 import InjectCard from './InjectCard'
 import ResponsePanel from './ResponsePanel'
 import GameLog from './GameLog'
+import Icon from './Icon'
 
 const GameBoard = ({ 
   selectedRoles, 
@@ -12,7 +13,8 @@ const GameBoard = ({
   gameLog, 
   addToGameLog, 
   onResetGame,
-  playerName 
+  playerName,
+  currentProject
 }) => {
   const [activeInjects, setActiveInjects] = useState([])
   const [responses, setResponses] = useState({})
@@ -20,12 +22,32 @@ const GameBoard = ({
   const [timer, setTimer] = useState(0)
   const [isTimerRunning, setIsTimerRunning] = useState(false)
 
-  // Get inject cards for the selected scenario (default or custom)
+  // Get inject cards for the selected scenario (default, custom, or from project)
   const getScenarioInjects = () => {
+    // If we have a current project with custom cards for this scenario, merge them
+    if (currentProject && currentProject.customCards && currentProject.customCards[selectedScenario.id]) {
+      const baseInjects = injectCards[selectedScenario.id] || []
+      const customInjects = currentProject.customCards[selectedScenario.id] || []
+      console.log(`🎯 Custom cards found for ${selectedScenario.id}:`, customInjects.length, 'cards')
+      console.log('📋 Base injects:', baseInjects.length, 'Default cards:', customInjects.length, 'custom cards')
+      return [...baseInjects, ...customInjects]
+    }
+    
+    // Debug logging
+    if (currentProject) {
+      console.log('🔍 Current project:', currentProject.name)
+      console.log('📦 Available custom cards:', Object.keys(currentProject.customCards || {}))
+      console.log('🎮 Selected scenario:', selectedScenario.id)
+    } else {
+      console.log('❌ No current project loaded')
+    }
+    
+    // Legacy custom scenario support
     if (selectedScenario.isCustom) {
       const customInjects = JSON.parse(localStorage.getItem('cybersecurity_fire_drill_custom_injects') || '{}')
       return customInjects[selectedScenario.id] || []
     }
+    
     return injectCards[selectedScenario.id] || []
   }
   
@@ -171,7 +193,7 @@ const GameBoard = ({
         <div className="text-center">
           <button
             onClick={startGame}
-            className="px-8 py-3 bg-red-600 text-white font-semibold rounded-lg hover:bg-red-700 transition-colors"
+            className="px-8 py-3 bg-gray-600 text-white font-semibold rounded-lg hover:bg-gray-700 transition-colors"
           >
             Begin Incident Response
           </button>
@@ -203,7 +225,7 @@ const GameBoard = ({
                 </div>
                 <button
                   onClick={endGame}
-                  className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors"
+                  className="px-4 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600 transition-colors"
                 >
                   End Exercise
                 </button>
@@ -238,14 +260,14 @@ const GameBoard = ({
                 <button
                   onClick={() => setCurrentInject(Math.min(scenarioInjects.length - 1, currentInject + 1))}
                   disabled={currentInject >= scenarioInjects.length - 1}
-                  className="px-3 py-1 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+                  className="px-3 py-1 bg-gray-600 text-white rounded-md hover:bg-gray-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
                 >
                   Next Inject
                 </button>
                 {currentInject >= scenarioInjects.length - 1 && (
                   <button
                     onClick={endGame}
-                    className="px-3 py-1 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
+                    className="px-3 py-1 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors"
                   >
                     Complete Exercise
                   </button>
@@ -279,7 +301,9 @@ const GameBoard = ({
       <div className="space-y-6">
         {/* Exercise Complete */}
         <div className="bg-white rounded-lg shadow-md p-6 text-center">
-          <div className="text-4xl mb-4">🎯</div>
+          <div className="mb-4">
+            <Icon name="target" className="w-16 h-16 mx-auto text-green-600" />
+          </div>
           <h2 className="text-2xl font-bold text-gray-900 mb-2">Exercise Complete!</h2>
           <p className="text-gray-600 mb-4">
             You have successfully completed the {selectedScenario.name} cybersecurity training exercise.
@@ -326,7 +350,7 @@ const GameBoard = ({
         <div className="text-center space-x-4">
           <button
             onClick={onResetGame}
-            className="px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors"
+            className="px-6 py-3 bg-gray-100 text-gray-700 font-semibold rounded-lg hover:bg-gray-200 border border-gray-300 transition-colors"
           >
             Try Another Scenario
           </button>

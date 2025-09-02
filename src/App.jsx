@@ -2,8 +2,8 @@ import { useState } from 'react'
 import './App.css'
 import GameSetup from './components/GameSetup'
 import GameBoard from './components/GameBoard'
+import Icon from './components/Icon'
 import { roles, scenarios } from './data/gameData'
-import { loadCustomScenarios } from './utils/scenarioStorage'
 
 function App() {
   const [gameState, setGameState] = useState('setup') // 'setup', 'playing', 'completed'
@@ -36,16 +36,19 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
       <header className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
-            <div className="flex items-center space-x-3">
-              <div className="text-2xl">🛡️</div>
-              <h1 className="text-2xl font-bold text-gray-900">CyberSecurity Fire Drill</h1>
+            <div 
+              onClick={resetGame}
+              className="flex items-center space-x-3 cursor-pointer"
+            >
+              <Icon name="shield" className="w-8 h-8 text-primary-500" />
+              <h1 className="text-2xl font-bold text-gray-900">Fire Drill</h1>
             </div>
-            <div className="text-sm text-gray-500">
-              Cybersecurity Incident Response Training
+            <div className="flex items-center space-x-4">
+              {/* Header navigation removed - projects managed in GameSetup */}
             </div>
           </div>
         </div>

@@ -41,12 +41,12 @@ const ScenarioManager = ({ customScenarios, onImport }) => {
         <button
           onClick={handleExport}
           disabled={customScenarios.length === 0}
-          className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
+          className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
         >
           📤 Export Scenarios
         </button>
         
-        <label className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 cursor-pointer">
+        <label className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 cursor-pointer">
           {importing ? '📥 Importing...' : '📥 Import Scenarios'}
           <input
             type="file"
@@ -57,7 +57,7 @@ const ScenarioManager = ({ customScenarios, onImport }) => {
           />
         </label>
       </div>
-      <p className="text-sm text-gray-600 mt-2">
+      <p className="text-sm text-gray-600 mt-2 text-left">
         Export your custom scenarios to share with your team, or import scenarios created by others.
       </p>
     </div>

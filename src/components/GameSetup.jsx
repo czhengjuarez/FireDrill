@@ -1,15 +1,24 @@
 import { useState, useEffect } from 'react'
 import ScenarioEditor from './ScenarioEditor'
 import ScenarioManager from './ScenarioManager'
+import CustomRoleManager from './CustomRoleManager'
+import Icon from './Icon'
 import { loadCustomScenarios, saveCustomScenarios } from '../utils/scenarioStorage'
 
 const GameSetup = ({ onStartGame, roles, scenarios }) => {
   const [selectedRoles, setSelectedRoles] = useState([])
   const [selectedScenario, setSelectedScenario] = useState(null)
   const [playerName, setPlayerName] = useState('')
+  const [projectType, setProjectType] = useState('default') // 'default' or 'custom'
   const [gameMode, setGameMode] = useState('single') // 'single' or 'multiplayer'
+  const [savedProjects, setSavedProjects] = useState([])
+  const [selectedProject, setSelectedProject] = useState(null)
+  const [showSaveProject, setShowSaveProject] = useState(false)
+  const [projectName, setProjectName] = useState('')
   const [customScenarios, setCustomScenarios] = useState([])
+  const [customRoles, setCustomRoles] = useState([])
   const [showScenarioEditor, setShowScenarioEditor] = useState(false)
+  const [showRoleManager, setShowRoleManager] = useState(false)
   const [scenarioFilter, setScenarioFilter] = useState('all') // 'all', 'default', 'custom'
 
   const toggleRole = (roleId) => {
@@ -25,11 +34,22 @@ const GameSetup = ({ onStartGame, roles, scenarios }) => {
       alert('Please select at least one role, a scenario, and enter your name.')
       return
     }
+    
+    // For custom projects, show save option if not already saved
+    if (projectType === 'custom' && !selectedProject) {
+      setShowSaveProject(true)
+      return
+    }
+    
     onStartGame(selectedRoles, selectedScenario, playerName)
   }
 
+  const getAllRoles = () => {
+    return [...roles, ...customRoles]
+  }
+
   const selectAllRoles = () => {
-    setSelectedRoles(roles.map(role => role.id))
+    setSelectedRoles(getAllRoles().map(role => role.id))
   }
 
   const clearRoles = () => {
@@ -38,7 +58,106 @@ const GameSetup = ({ onStartGame, roles, scenarios }) => {
 
   useEffect(() => {
     setCustomScenarios(loadCustomScenarios())
+    loadCustomRoles()
+    loadSavedProjects()
   }, [])
+
+  const loadCustomRoles = async () => {
+    try {
+      const apiUrl = 'http://localhost:8787/api/custom-roles'
+      const response = await fetch(apiUrl)
+      if (response.ok) {
+        const roles = await response.json()
+        setCustomRoles(roles)
+      }
+    } catch (error) {
+      console.error('Failed to load custom roles:', error)
+    }
+  }
+
+  const loadSavedProjects = async () => {
+    try {
+      const apiUrl = 'http://localhost:8787/api/projects'
+      const response = await fetch(apiUrl)
+      if (response.ok) {
+        const projects = await response.json()
+        setSavedProjects(projects)
+      }
+    } catch (error) {
+      console.error('Failed to load saved projects:', error)
+    }
+  }
+
+  const saveCurrentProject = async () => {
+    if (!projectName.trim()) {
+      alert('Please enter a project name')
+      return
+    }
+
+    const projectData = {
+      name: projectName,
+      selectedRoles,
+      selectedScenario,
+      createdAt: new Date().toISOString()
+    }
+
+    try {
+      const response = await fetch('http://localhost:8787/api/projects', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(projectData)
+      })
+
+      if (response.ok) {
+        const savedProject = await response.json()
+        alert('Project saved successfully!')
+        setShowSaveProject(false)
+        setProjectName('')
+        loadSavedProjects() // Refresh the list
+        onStartGame(selectedRoles, selectedScenario, playerName)
+      } else {
+        alert('Failed to save project')
+      }
+    } catch (error) {
+      console.error('Error saving project:', error)
+      alert('Failed to save project')
+    }
+  }
+
+  const deleteProject = async (projectId, projectName) => {
+    if (!confirm(`Are you sure you want to delete "${projectName}"?`)) {
+      return
+    }
+
+    try {
+      const apiUrl = `http://localhost:8787/api/projects/${projectId}`
+      const response = await fetch(apiUrl, {
+        method: 'DELETE'
+      })
+
+      if (response.ok) {
+        alert('Project deleted successfully!')
+        loadSavedProjects() // Refresh the list
+        if (selectedProject?.id === projectId) {
+          setSelectedProject(null)
+          setSelectedRoles([])
+          setSelectedScenario(null)
+        }
+      } else {
+        alert('Failed to delete project')
+      }
+    } catch (error) {
+      console.error('Error deleting project:', error)
+      alert('Failed to delete project')
+    }
+  }
+
+
+  const loadProject = (project) => {
+    setSelectedRoles(project.selectedRoles || [])
+    setSelectedScenario(project.selectedScenario)
+    setSelectedProject(project)
+  }
 
   const handleImportScenarios = (importedScenarios) => {
     const existingScenarios = loadCustomScenarios()
@@ -98,34 +217,117 @@ const GameSetup = ({ onStartGame, roles, scenarios }) => {
               type="text"
               value={playerName}
               onChange={(e) => setPlayerName(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 text-gray-900"
               placeholder="Enter your name"
             />
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Game Mode
+              Project Type
             </label>
             <select
-              value={gameMode}
-              onChange={(e) => setGameMode(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              value={projectType}
+              onChange={(e) => {
+                setProjectType(e.target.value)
+                if (e.target.value === 'default') {
+                  setSelectedProject(null)
+                  setSelectedRoles([])
+                  setSelectedScenario(null)
+                }
+              }}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 text-gray-900"
             >
-              <option value="single">Single Player (Play multiple roles)</option>
-              <option value="multiplayer">Multiplayer (Coming soon)</option>
+              <optgroup label="Default">
+                <option value="default">Single Player</option>
+                <option value="default-multi">Multiplayer (Coming soon)</option>
+              </optgroup>
+              <optgroup label="Custom Project">
+                <option value="custom">Single Player</option>
+                <option value="custom-multi">Multiplayer (Coming soon)</option>
+              </optgroup>
             </select>
           </div>
         </div>
       </div>
 
+      {/* Custom Project Loading */}
+      {projectType === 'custom' && savedProjects.length > 0 && (
+        <div className="bg-white rounded-lg shadow-md p-6">
+          <h3 className="text-xl font-semibold text-gray-900 mb-4">Saved Projects</h3>
+          <p className="text-gray-600 mb-4">
+            Click on a project to load its configuration and start your practice session. You can also create new projects to save for later use.
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {savedProjects.map(project => (
+              <div
+                key={project.id}
+                onClick={() => loadProject(project)}
+                className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${
+                  selectedProject?.id === project.id
+                    ? 'border-blue-400 bg-blue-50'
+                    : 'border-gray-200 bg-white hover:border-gray-300'
+                }`}
+              >
+                <div className="flex justify-between items-start mb-2">
+                  <h4 className="font-semibold text-gray-900">{project.name}</h4>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      deleteProject(project.id, project.name)
+                    }}
+                    className="p-1 text-gray-400 hover:text-red-600 transition-colors"
+                    title="Delete project"
+                  >
+                    <Icon name="delete" className="w-4 h-4" />
+                  </button>
+                </div>
+                <p className="text-sm text-gray-600 mb-2">
+                  {project.selectedRoles?.length || 0} roles, {project.selectedScenario?.name || 'No scenario'}
+                </p>
+                <p className="text-xs text-gray-500">
+                  Created: {new Date(project.createdAt).toLocaleDateString()}
+                </p>
+                {selectedProject?.id === project.id && (
+                  <div className="mt-2">
+                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                      <Icon name="check" className="w-3 h-3 mr-1" />
+                      Loaded
+                    </span>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+          <div className="mt-4 text-center">
+            <button
+              onClick={() => {
+                setSelectedProject(null)
+                setSelectedRoles([])
+                setSelectedScenario(null)
+              }}
+              className="px-4 py-2 text-sm bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200"
+            >
+              Create New Project Instead
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Role Selection */}
       <div className="bg-white rounded-lg shadow-md p-6">
         <div className="flex justify-between items-center mb-6">
           <h3 className="text-xl font-semibold text-gray-900">Select Your Organizational Roles</h3>
-          <div className="space-x-2">
+          <div className="flex space-x-2">
+            <button
+              onClick={() => setShowRoleManager(true)}
+              className="px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors flex items-center"
+            >
+              <Icon name="plus" className="w-4 h-4 mr-1" />
+              Create Role
+            </button>
             <button
               onClick={selectAllRoles}
-              className="px-3 py-1 text-sm bg-blue-100 text-blue-700 rounded-md hover:bg-blue-200 transition-colors"
+              className="px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors"
             >
               Select All
             </button>
@@ -139,25 +341,33 @@ const GameSetup = ({ onStartGame, roles, scenarios }) => {
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {roles.map(role => (
+          {getAllRoles().map(role => (
             <div
               key={role.id}
               onClick={() => toggleRole(role.id)}
               className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${
                 selectedRoles.includes(role.id)
-                  ? 'border-blue-500 bg-blue-50'
+                  ? 'border-gray-400 bg-gray-50'
                   : 'border-gray-200 bg-white hover:border-gray-300'
               }`}
             >
               <div className="flex items-center space-x-3 mb-2">
-                <span className="text-2xl">{role.icon}</span>
-                <h4 className="font-semibold text-gray-900 text-sm">{role.name}</h4>
+                <Icon name={role.icon || 'user'} className="w-6 h-6 text-gray-700" />
+                <div className="flex-1">
+                  <h4 className="font-semibold text-gray-900 text-sm">{role.name}</h4>
+                  {role.isCustom && (
+                    <span className="inline-block px-1 py-0.5 bg-purple-100 text-purple-800 text-xs font-medium rounded">
+                      Custom
+                    </span>
+                  )}
+                </div>
               </div>
               <p className="text-xs text-gray-600">{role.description}</p>
               {selectedRoles.includes(role.id) && (
                 <div className="mt-2">
-                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                    ✓ Selected
+                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-primary-100 text-primary-800">
+                    <Icon name="check" className="w-3 h-3 mr-1" />
+                    Selected
                   </span>
                 </div>
               )}
@@ -166,7 +376,10 @@ const GameSetup = ({ onStartGame, roles, scenarios }) => {
         </div>
         
         <div className="mt-4 text-sm text-gray-600">
-          Selected roles: {selectedRoles.length} / {roles.length}
+          Selected roles: {selectedRoles.length} / {getAllRoles().length} 
+          <span className="ml-2 text-gray-500">
+            ({roles.length} default, {customRoles.length} custom)
+          </span>
         </div>
       </div>
 
@@ -177,9 +390,10 @@ const GameSetup = ({ onStartGame, roles, scenarios }) => {
           <div className="flex space-x-2">
             <button
               onClick={() => setShowScenarioEditor(true)}
-              className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 text-sm"
+              className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 text-sm flex items-center"
             >
-              + Create Custom
+              <Icon name="plus" className="w-4 h-4 mr-1" />
+              Create Custom
             </button>
           </div>
         </div>
@@ -189,30 +403,30 @@ const GameSetup = ({ onStartGame, roles, scenarios }) => {
           <div className="flex space-x-2">
             <button
               onClick={() => setScenarioFilter('all')}
-              className={`px-3 py-1 rounded-md text-sm ${
+              className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
                 scenarioFilter === 'all' 
-                  ? 'bg-blue-100 text-blue-700' 
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  ? 'bg-primary-500 text-white' 
+                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
               }`}
             >
               All ({getAllScenarios().length})
             </button>
             <button
               onClick={() => setScenarioFilter('default')}
-              className={`px-3 py-1 rounded-md text-sm ${
+              className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
                 scenarioFilter === 'default' 
-                  ? 'bg-blue-100 text-blue-700' 
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  ? 'bg-primary-500 text-white' 
+                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
               }`}
             >
               Default ({scenarios.length})
             </button>
             <button
               onClick={() => setScenarioFilter('custom')}
-              className={`px-3 py-1 rounded-md text-sm ${
+              className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
                 scenarioFilter === 'custom' 
-                  ? 'bg-blue-100 text-blue-700' 
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  ? 'bg-primary-500 text-white' 
+                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
               }`}
             >
               Custom ({customScenarios.length})
@@ -235,13 +449,13 @@ const GameSetup = ({ onStartGame, roles, scenarios }) => {
               onClick={() => setSelectedScenario(scenario)}
               className={`p-6 rounded-lg border-2 cursor-pointer transition-all ${
                 selectedScenario?.id === scenario.id
-                  ? 'border-blue-500 bg-blue-50'
+                  ? 'border-gray-400 bg-gray-50'
                   : 'border-gray-200 bg-white hover:border-gray-300'
               }`}
             >
               <div className="flex justify-between items-start mb-3">
                 <div className="flex items-center space-x-2">
-                  <h4 className="text-lg font-semibold text-gray-900">{scenario.name}</h4>
+                  <h4 className="text-lg font-semibold text-gray-900 text-left">{scenario.name}</h4>
                   {scenario.isCustom && (
                     <span className="px-2 py-1 bg-purple-100 text-purple-800 text-xs font-medium rounded-full">
                       Custom
@@ -257,17 +471,17 @@ const GameSetup = ({ onStartGame, roles, scenarios }) => {
                 </span>
               </div>
               
-              <p className="text-gray-600 mb-4">{scenario.description}</p>
+              <p className="text-gray-600 mb-4 text-left">{scenario.description}</p>
               
               <div className="space-y-2">
-                <div className="flex items-center text-sm text-gray-500">
+                <div className="flex items-center text-sm text-gray-500 text-left">
                   <span className="mr-2">⏱️</span>
                   Estimated time: {scenario.estimatedTime}
                 </div>
                 
-                <div className="text-sm text-gray-700">
+                <div className="text-sm text-gray-700 text-left">
                   <span className="font-medium">Learning objectives:</span>
-                  <ul className="mt-1 ml-4 list-disc list-inside text-xs space-y-1">
+                  <ul className="mt-1 ml-4 list-disc list-inside text-xs space-y-1 text-left">
                     {scenario.objectives.slice(0, 3).map((objective, index) => (
                       <li key={index}>{objective}</li>
                     ))}
@@ -280,8 +494,9 @@ const GameSetup = ({ onStartGame, roles, scenarios }) => {
 
               {selectedScenario?.id === scenario.id && (
                 <div className="mt-4">
-                  <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
-                    ✓ Selected
+                  <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-800">
+                    <Icon name="check" className="w-4 h-4 mr-1" />
+                    Selected
                   </span>
                 </div>
               )}
@@ -295,9 +510,9 @@ const GameSetup = ({ onStartGame, roles, scenarios }) => {
         <button
           onClick={handleStartGame}
           disabled={selectedRoles.length === 0 || !selectedScenario || !playerName}
-          className="px-8 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+          className="px-4 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
         >
-          Start Cybersecurity Training
+          {projectType === 'custom' && !selectedProject ? 'Save Project & Start Training' : 'Start Cybersecurity Training'}
         </button>
         
         {(selectedRoles.length === 0 || !selectedScenario || !playerName) && (
@@ -307,12 +522,64 @@ const GameSetup = ({ onStartGame, roles, scenarios }) => {
         )}
       </div>
 
+      {/* Save Project Modal */}
+      {showSaveProject && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Save Custom Project</h3>
+            <p className="text-gray-600 mb-4">
+              Save your role and scenario selection as a project for future use.
+            </p>
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Project Name
+              </label>
+              <input
+                type="text"
+                value={projectName}
+                onChange={(e) => setProjectName(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Enter project name"
+              />
+            </div>
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={() => {
+                  setShowSaveProject(false)
+                  onStartGame(selectedRoles, selectedScenario, playerName)
+                }}
+                className="px-4 py-2 text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
+              >
+                Skip & Start
+              </button>
+              <button
+                onClick={saveCurrentProject}
+                className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+              >
+                Save & Start
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Custom Role Manager Modal */}
+      {showRoleManager && (
+        <CustomRoleManager
+          onClose={() => {
+            setShowRoleManager(false)
+            loadCustomRoles() // Refresh roles after closing
+          }}
+        />
+      )}
+
       {/* Scenario Editor Modal */}
       {showScenarioEditor && (
         <ScenarioEditor
           onClose={() => setShowScenarioEditor(false)}
-          onSave={() => {
-            setCustomScenarios(loadCustomScenarios())
+          onSave={(newScenario) => {
+            const updatedScenarios = loadCustomScenarios()
+            setCustomScenarios(updatedScenarios)
             setShowScenarioEditor(false)
           }}
         />

@@ -5,56 +5,56 @@ export const roles = [
     name: 'Communications/Media',
     description: 'Manages internal and external communications, media relations, and public messaging during incidents.',
     color: 'bg-blue-500',
-    icon: '📢'
+    icon: 'megaphone'
   },
   {
     id: 'finance',
     name: 'Finance',
     description: 'Oversees financial impact assessment, budget allocation for incident response, and financial recovery.',
     color: 'bg-green-500',
-    icon: '💰'
+    icon: 'currency'
   },
   {
     id: 'hr',
     name: 'Human Resources',
     description: 'Handles employee communications, training, and workforce management during security incidents.',
     color: 'bg-purple-500',
-    icon: '👥'
+    icon: 'users'
   },
   {
     id: 'it',
     name: 'Information Technology',
     description: 'Manages technical infrastructure, system recovery, and IT security measures.',
     color: 'bg-indigo-500',
-    icon: '💻'
+    icon: 'laptop'
   },
   {
     id: 'leader',
     name: 'Leader',
     description: 'Provides executive oversight, makes strategic decisions, and coordinates organizational response.',
     color: 'bg-red-500',
-    icon: '👔'
+    icon: 'crown'
   },
   {
     id: 'legal',
     name: 'Legal/Risk/Compliance',
     description: 'Ensures regulatory compliance, manages legal implications, and assesses organizational risk.',
     color: 'bg-yellow-500',
-    icon: '⚖️'
+    icon: 'scale'
   },
   {
     id: 'operations',
     name: 'Operations',
     description: 'Maintains business continuity, manages operational processes during incidents.',
     color: 'bg-orange-500',
-    icon: '⚙️'
+    icon: 'cog'
   },
   {
     id: 'security',
     name: 'Security/Law Enforcement',
     description: 'Leads incident response, coordinates with law enforcement, and implements security measures.',
     color: 'bg-gray-700',
-    icon: '🛡️'
+    icon: 'shield'
   }
 ];
 
