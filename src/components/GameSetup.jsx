@@ -20,6 +20,7 @@ const GameSetup = ({ onStartGame, roles, scenarios }) => {
   const [showScenarioEditor, setShowScenarioEditor] = useState(false)
   const [showRoleManager, setShowRoleManager] = useState(false)
   const [scenarioFilter, setScenarioFilter] = useState('all') // 'all', 'default', 'custom'
+  const [loadingProjects, setLoadingProjects] = useState(false)
 
   const toggleRole = (roleId) => {
     setSelectedRoles(prev => 
@@ -76,15 +77,22 @@ const GameSetup = ({ onStartGame, roles, scenarios }) => {
   }
 
   const loadSavedProjects = async () => {
+    setLoadingProjects(true);
     try {
-      const apiUrl = 'http://localhost:8787/api/projects'
-      const response = await fetch(apiUrl)
+      const response = await fetch('http://localhost:8787/api/projects');
       if (response.ok) {
-        const projects = await response.json()
-        setSavedProjects(projects)
+        const projects = await response.json();
+        console.log('Loaded projects:', projects);
+        setSavedProjects(projects);
+        // If we have projects and user hasn't selected custom yet, suggest it
+        if (projects.length > 0 && projectType === 'default') {
+          console.log('Found saved projects, consider switching to custom project type');
+        }
       }
     } catch (error) {
-      console.error('Failed to load saved projects:', error)
+      console.error('Failed to load projects:', error);
+    } finally {
+      setLoadingProjects(false);
     }
   }
 
@@ -249,6 +257,29 @@ const GameSetup = ({ onStartGame, roles, scenarios }) => {
           </div>
         </div>
       </div>
+
+      {/* Saved Projects Notification */}
+      {projectType === 'default' && savedProjects.length > 0 && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <div className="flex items-center">
+            <div className="flex-shrink-0">
+              <svg className="h-5 w-5 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <div className="ml-3">
+              <h3 className="text-sm font-medium text-blue-800">
+                You have {savedProjects.length} saved project{savedProjects.length !== 1 ? 's' : ''}
+              </h3>
+              <div className="mt-2 text-sm text-blue-700">
+                <p>
+                  Switch to "Custom Project" to load your saved configurations.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Custom Project Loading */}
       {projectType === 'custom' && savedProjects.length > 0 && (

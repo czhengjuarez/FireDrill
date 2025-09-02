@@ -1,10 +1,8 @@
 name = "fire-drill-test"
 main = "workers-site/index.js"
-compatibility_date = "2024-01-15"
+compatibility_date = "2023-12-01"
 
-[site]
-bucket = "./dist"
-
-[[r2_buckets]]
-binding = "FIRE_DRILL_PROJECTS"
-bucket_name = "fire-drill-projects"
+[[d1_databases]]
+binding = "DB"
+database_name = "fire-drill-db"
+database_id = "ca36eabc-2859-411c-99b1-653f6fc2ba56"
