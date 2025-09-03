@@ -17,7 +17,7 @@ const CustomRoleManager = ({ onClose }) => {
   const loadCustomRoles = async () => {
     setLoading(true);
     try {
-      const response = await fetch('http://localhost:8787/api/custom-roles');
+      const response = await fetch('/api/custom-roles');
       if (response.ok) {
         const roles = await response.json();
         setCustomRoles(roles);
@@ -29,7 +29,8 @@ const CustomRoleManager = ({ onClose }) => {
     }
   };
 
-  const createRole = async () => {
+  const createRole = async (e) => {
+    e.preventDefault()
     if (!newRole.name.trim() || !newRole.description.trim()) {
       alert('Please fill in role name and description')
       return
@@ -38,12 +39,11 @@ const CustomRoleManager = ({ onClose }) => {
     const roleData = {
       name: newRole.name,
       description: newRole.description,
-      icon: 'user',
-      createdAt: new Date().toISOString()
+      icon: 'user'
     }
 
     try {
-      const response = await fetch('http://localhost:8787/api/custom-roles', {
+      const response = await fetch('/api/custom-roles', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(roleData)
@@ -51,12 +51,15 @@ const CustomRoleManager = ({ onClose }) => {
 
       if (response.ok) {
         const savedRole = await response.json()
+        console.log('Role created successfully:', savedRole)
         setCustomRoles(prev => [...prev, savedRole])
         setNewRole({ name: '', description: '' })
         setShowCreateForm(false)
         alert('Role created successfully!')
       } else {
-        alert('Failed to create role')
+        const errorText = await response.text()
+        console.error('Failed to create role:', response.status, errorText)
+        alert(`Failed to create role: ${response.status} - ${errorText}`)
       }
     } catch (error) {
       console.error('Error creating role:', error)
@@ -68,7 +71,7 @@ const CustomRoleManager = ({ onClose }) => {
     if (!confirm('Are you sure you want to delete this custom role?')) return;
 
     try {
-      const response = await fetch(`http://localhost:8787/api/custom-roles/${roleId}`, {
+      const response = await fetch(`/api/custom-roles/${roleId}`, {
         method: 'DELETE',
       });
 

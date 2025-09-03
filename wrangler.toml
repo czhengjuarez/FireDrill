@@ -1,4 +1,4 @@
-name = "fire-drill-test"
+name = "fire-drill"
 main = "workers-site/index.js"
 compatibility_date = "2023-12-01"
 

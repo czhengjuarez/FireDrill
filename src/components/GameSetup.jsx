@@ -65,7 +65,7 @@ const GameSetup = ({ onStartGame, roles, scenarios }) => {
 
   const loadCustomRoles = async () => {
     try {
-      const apiUrl = 'http://localhost:8787/api/custom-roles'
+      const apiUrl = '/api/custom-roles'
       const response = await fetch(apiUrl)
       if (response.ok) {
         const roles = await response.json()
@@ -79,7 +79,7 @@ const GameSetup = ({ onStartGame, roles, scenarios }) => {
   const loadSavedProjects = async () => {
     setLoadingProjects(true);
     try {
-      const response = await fetch('http://localhost:8787/api/projects');
+      const response = await fetch('/api/projects');
       if (response.ok) {
         const projects = await response.json();
         console.log('Loaded projects:', projects);
@@ -104,13 +104,24 @@ const GameSetup = ({ onStartGame, roles, scenarios }) => {
 
     const projectData = {
       name: projectName,
-      selectedRoles,
-      selectedScenario,
-      createdAt: new Date().toISOString()
+      description: `Project with ${selectedRoles.length} roles and scenario: ${selectedScenario?.name || 'Unknown'}`,
+      scenarios: [selectedScenario],
+      custom_cards: [],
+      selected_roles: selectedRoles.map(roleId => {
+        const role = getAllRoles().find(r => r.id === roleId)
+        return role ? {
+          id: role.id,
+          name: role.name,
+          description: role.description,
+          responsibilities: role.responsibilities || [],
+          icon: role.icon || 'user',
+          isCustom: role.isCustom || false
+        } : null
+      }).filter(Boolean)
     }
 
     try {
-      const response = await fetch('http://localhost:8787/api/projects', {
+      const response = await fetch('/api/projects', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(projectData)
@@ -118,13 +129,17 @@ const GameSetup = ({ onStartGame, roles, scenarios }) => {
 
       if (response.ok) {
         const savedProject = await response.json()
+        console.log('Project saved successfully:', savedProject)
         alert('Project saved successfully!')
         setShowSaveProject(false)
         setProjectName('')
         loadSavedProjects() // Refresh the list
+        // Start the game after saving
         onStartGame(selectedRoles, selectedScenario, playerName)
       } else {
-        alert('Failed to save project')
+        const errorText = await response.text()
+        console.error('Failed to save project:', response.status, errorText)
+        alert(`Failed to save project: ${response.status} - ${errorText}`)
       }
     } catch (error) {
       console.error('Error saving project:', error)
@@ -138,7 +153,7 @@ const GameSetup = ({ onStartGame, roles, scenarios }) => {
     }
 
     try {
-      const apiUrl = `http://localhost:8787/api/projects/${projectId}`
+      const apiUrl = `/api/projects/${projectId}`
       const response = await fetch(apiUrl, {
         method: 'DELETE'
       })
@@ -162,8 +177,14 @@ const GameSetup = ({ onStartGame, roles, scenarios }) => {
 
 
   const loadProject = (project) => {
-    setSelectedRoles(project.selectedRoles || [])
-    setSelectedScenario(project.selectedScenario)
+    // Extract role IDs from saved project data
+    const roleIds = (project.selected_roles || []).map(role => role.id)
+    setSelectedRoles(roleIds)
+    
+    // Extract scenario from saved project data
+    const scenario = project.scenarios && project.scenarios.length > 0 ? project.scenarios[0] : null
+    setSelectedScenario(scenario)
+    
     setSelectedProject(project)
   }
 
@@ -312,12 +333,12 @@ const GameSetup = ({ onStartGame, roles, scenarios }) => {
                     <Icon name="delete" className="w-4 h-4" />
                   </button>
                 </div>
-                <p className="text-sm text-gray-600 mb-2">
-                  {project.selectedRoles?.length || 0} roles, {project.selectedScenario?.name || 'No scenario'}
-                </p>
-                <p className="text-xs text-gray-500">
-                  Created: {new Date(project.createdAt).toLocaleDateString()}
-                </p>
+                <div className="text-xs text-gray-500 space-y-1">
+                  <div>Roles: {project.selected_roles ? (Array.isArray(project.selected_roles) ? project.selected_roles.length : JSON.parse(project.selected_roles || '[]').length) : 0}</div>
+                  <div>Scenarios: {project.scenarios ? (Array.isArray(project.scenarios) ? project.scenarios.length : JSON.parse(project.scenarios || '[]').length) : 0}</div>
+                  <div>Cards: {project.custom_cards ? (Array.isArray(project.custom_cards) ? project.custom_cards.length : JSON.parse(project.custom_cards || '[]').length) : 0}</div>
+                  <div>Created: {new Date(project.created_at).toLocaleDateString()}</div>
+                </div>
                 {selectedProject?.id === project.id && (
                   <div className="mt-2">
                     <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
@@ -354,7 +375,7 @@ const GameSetup = ({ onStartGame, roles, scenarios }) => {
               className="px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors flex items-center"
             >
               <Icon name="plus" className="w-4 h-4 mr-1" />
-              Create Role
+              Create & Manage Role
             </button>
             <button
               onClick={selectAllRoles}
