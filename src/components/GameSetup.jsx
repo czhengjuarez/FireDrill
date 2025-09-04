@@ -5,7 +5,7 @@ import CustomRoleManager from './CustomRoleManager'
 import Icon from './Icon'
 import { loadCustomScenarios, saveCustomScenarios } from '../utils/scenarioStorage'
 
-const GameSetup = ({ onStartGame, roles, scenarios }) => {
+const GameSetup = ({ onStartGame, onStartMultiplayer, roles, scenarios }) => {
   const [selectedRoles, setSelectedRoles] = useState([])
   const [selectedScenario, setSelectedScenario] = useState(null)
   const [playerName, setPlayerName] = useState('')
@@ -102,10 +102,22 @@ const GameSetup = ({ onStartGame, roles, scenarios }) => {
       return
     }
 
+    // Debug logging
+    console.log('Saving project with:', {
+      selectedRoles,
+      selectedScenario,
+      projectName
+    })
+
+    if (selectedRoles.length === 0 || !selectedScenario) {
+      alert('Please select at least one role and a scenario before saving.')
+      return
+    }
+
     const projectData = {
       name: projectName,
       description: `Project with ${selectedRoles.length} roles and scenario: ${selectedScenario?.name || 'Unknown'}`,
-      scenarios: [selectedScenario],
+      scenarios: [selectedScenario].filter(Boolean),
       custom_cards: [],
       selected_roles: selectedRoles.map(roleId => {
         const role = getAllRoles().find(r => r.id === roleId)
@@ -119,6 +131,8 @@ const GameSetup = ({ onStartGame, roles, scenarios }) => {
         } : null
       }).filter(Boolean)
     }
+
+    console.log('Project data to save:', projectData)
 
     try {
       const response = await fetch('/api/projects', {
@@ -177,15 +191,20 @@ const GameSetup = ({ onStartGame, roles, scenarios }) => {
 
 
   const loadProject = (project) => {
+    console.log('Loading project:', project)
+    
     // Extract role IDs from saved project data
     const roleIds = (project.selected_roles || []).map(role => role.id)
+    console.log('Extracted role IDs:', roleIds)
     setSelectedRoles(roleIds)
     
     // Extract scenario from saved project data
     const scenario = project.scenarios && project.scenarios.length > 0 ? project.scenarios[0] : null
+    console.log('Extracted scenario:', scenario)
     setSelectedScenario(scenario)
     
     setSelectedProject(project)
+    console.log('Project loaded successfully')
   }
 
   const handleImportScenarios = (importedScenarios) => {
@@ -234,22 +253,10 @@ const GameSetup = ({ onStartGame, roles, scenarios }) => {
         </p>
       </div>
 
-      {/* Player Setup */}
+      {/* Project Type and Mode Selection */}
       <div className="bg-white rounded-lg shadow-md p-6">
-        <h3 className="text-xl font-semibold text-gray-900 mb-4">Player Setup</h3>
+        <h3 className="text-xl font-semibold text-gray-900 mb-4">Training Setup</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Your Name
-            </label>
-            <input
-              type="text"
-              value={playerName}
-              onChange={(e) => setPlayerName(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 text-gray-900"
-              placeholder="Enter your name"
-            />
-          </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Project Type
@@ -264,17 +271,88 @@ const GameSetup = ({ onStartGame, roles, scenarios }) => {
                   setSelectedScenario(null)
                 }
               }}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 text-gray-900"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-900"
             >
-              <optgroup label="Default">
-                <option value="default">Single Player</option>
-                <option value="default-multi">Multiplayer (Coming soon)</option>
-              </optgroup>
-              <optgroup label="Custom Project">
-                <option value="custom">Single Player</option>
-                <option value="custom-multi">Multiplayer (Coming soon)</option>
-              </optgroup>
+              <option value="default">Default Project</option>
+              <option value="custom">Custom Project</option>
             </select>
+            <p className="mt-2 text-sm text-gray-500">
+              {projectType === 'default' 
+                ? 'Use predefined roles and scenarios'
+                : 'Load saved projects or create new ones'
+              }
+            </p>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Training Mode
+            </label>
+            <select
+              value={gameMode}
+              onChange={(e) => {
+                const newMode = e.target.value;
+                setGameMode(newMode);
+                // Only redirect to multiplayer if it's default project type
+                if (newMode === 'multiplayer' && projectType === 'default') {
+                  onStartMultiplayer();
+                }
+              }}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-900"
+            >
+              <option value="single">Single Player Training</option>
+              <option value="multiplayer">Multiplayer Session (Facilitator)</option>
+            </select>
+            <p className="mt-2 text-sm text-gray-500">
+              {gameMode === 'single' 
+                ? 'Practice scenarios individually at your own pace'
+                : 'Create and facilitate multiplayer training sessions'
+              }
+            </p>
+          </div>
+        </div>
+        
+        {/* Show multiplayer custom project message */}
+        {projectType === 'custom' && gameMode === 'multiplayer' && (
+          <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+            <div className="flex items-center">
+              <div className="flex-shrink-0">
+                <svg className="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <div className="ml-3">
+                <h3 className="text-sm font-medium text-yellow-800">
+                  Custom Multiplayer Projects Coming Soon
+                </h3>
+                <div className="mt-2 text-sm text-yellow-700">
+                  <p>
+                    Custom multiplayer project creation is not yet available. Please use Default Project for multiplayer sessions.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Only show setup sections for single player mode or custom multiplayer (not implemented) */}
+      {(gameMode === 'single' || (gameMode === 'multiplayer' && projectType === 'custom')) && (
+        <>
+          {/* Player Setup */}
+          <div className="bg-white rounded-lg shadow-md p-6">
+            <h3 className="text-xl font-semibold text-gray-900 mb-4">Player Setup</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Your Name
+                </label>
+                <input
+                  type="text"
+                  value={playerName}
+                  onChange={(e) => setPlayerName(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 text-gray-900"
+              placeholder="Enter your name"
+            />
           </div>
         </div>
       </div>
@@ -302,55 +380,80 @@ const GameSetup = ({ onStartGame, roles, scenarios }) => {
         </div>
       )}
 
-      {/* Custom Project Loading */}
-      {projectType === 'custom' && savedProjects.length > 0 && (
+      {/* Custom Project Options */}
+      {projectType === 'custom' && (
         <div className="bg-white rounded-lg shadow-md p-6">
-          <h3 className="text-xl font-semibold text-gray-900 mb-4">Saved Projects</h3>
-          <p className="text-gray-600 mb-4">
-            Click on a project to load its configuration and start your practice session. You can also create new projects to save for later use.
-          </p>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {savedProjects.map(project => (
-              <div
-                key={project.id}
-                onClick={() => loadProject(project)}
-                className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${
-                  selectedProject?.id === project.id
-                    ? 'border-blue-400 bg-blue-50'
-                    : 'border-gray-200 bg-white hover:border-gray-300'
-                }`}
-              >
-                <div className="flex justify-between items-start mb-2">
-                  <h4 className="font-semibold text-gray-900">{project.name}</h4>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      deleteProject(project.id, project.name)
-                    }}
-                    className="p-1 text-gray-400 hover:text-red-600 transition-colors"
-                    title="Delete project"
-                  >
-                    <Icon name="delete" className="w-4 h-4" />
-                  </button>
-                </div>
-                <div className="text-xs text-gray-500 space-y-1">
-                  <div>Roles: {project.selected_roles ? (Array.isArray(project.selected_roles) ? project.selected_roles.length : JSON.parse(project.selected_roles || '[]').length) : 0}</div>
-                  <div>Scenarios: {project.scenarios ? (Array.isArray(project.scenarios) ? project.scenarios.length : JSON.parse(project.scenarios || '[]').length) : 0}</div>
-                  <div>Cards: {project.custom_cards ? (Array.isArray(project.custom_cards) ? project.custom_cards.length : JSON.parse(project.custom_cards || '[]').length) : 0}</div>
-                  <div>Created: {new Date(project.created_at).toLocaleDateString()}</div>
-                </div>
-                {selectedProject?.id === project.id && (
-                  <div className="mt-2">
-                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                      <Icon name="check" className="w-3 h-3 mr-1" />
-                      Loaded
-                    </span>
-                  </div>
-                )}
+          <h3 className="text-xl font-semibold text-gray-900 mb-4">Custom Project Options</h3>
+          
+          {savedProjects.length > 0 ? (
+            <>
+              <div className="mb-6">
+                <h4 className="text-lg font-medium text-gray-900 mb-2">Load Existing Project</h4>
+                <p className="text-gray-600 mb-4">
+                  Select a saved project to load its configuration and start training.
+                </p>
               </div>
-            ))}
-          </div>
-          <div className="mt-4 text-center">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+                {savedProjects.map(project => (
+                  <div
+                    key={project.id}
+                    onClick={() => loadProject(project)}
+                    className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${
+                      selectedProject?.id === project.id
+                        ? 'border-blue-400 bg-blue-50'
+                        : 'border-gray-200 bg-white hover:border-gray-300'
+                    }`}
+                  >
+                    <div className="flex justify-between items-start mb-2">
+                      <h4 className="font-semibold text-gray-900">{project.name}</h4>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          deleteProject(project.id, project.name)
+                        }}
+                        className="p-1 text-gray-400 hover:text-red-600 transition-colors"
+                        title="Delete project"
+                      >
+                        <Icon name="delete" className="w-4 h-4" />
+                      </button>
+                    </div>
+                    <div className="text-xs text-gray-500 space-y-1">
+                      <div>Roles: {project.selected_roles ? project.selected_roles.length : 0}</div>
+                      <div>Scenarios: {project.scenarios ? project.scenarios.length : 0}</div>
+                      <div>Cards: {project.custom_cards ? project.custom_cards.length : 0}</div>
+                      <div>Created: {new Date(project.created_at).toLocaleDateString()}</div>
+                    </div>
+                    {selectedProject?.id === project.id && (
+                      <div className="mt-2">
+                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                          <Icon name="check" className="w-3 h-3 mr-1" />
+                          Loaded
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+              
+              <div className="border-t pt-6">
+                <h4 className="text-lg font-medium text-gray-900 mb-2">Create New Project</h4>
+                <p className="text-gray-600 mb-4">
+                  Start fresh by selecting roles and scenarios to create a new custom project.
+                </p>
+              </div>
+            </>
+          ) : (
+            <div className="text-center py-8">
+              <div className="mb-4">
+                <Icon name="folder" className="w-16 h-16 mx-auto text-gray-300" />
+              </div>
+              <h4 className="text-lg font-medium text-gray-900 mb-2">No Saved Projects</h4>
+              <p className="text-gray-600 mb-4">
+                Create your first custom project by selecting roles and scenarios below.
+              </p>
+            </div>
+          )}
+          <div className="text-center">
             <button
               onClick={() => {
                 setSelectedProject(null)
@@ -557,22 +660,24 @@ const GameSetup = ({ onStartGame, roles, scenarios }) => {
         </div>
       </div>
 
-      {/* Start Game Button */}
-      <div className="text-center">
-        <button
-          onClick={handleStartGame}
-          disabled={selectedRoles.length === 0 || !selectedScenario || !playerName}
-          className="px-4 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
-        >
-          {projectType === 'custom' && !selectedProject ? 'Save Project & Start Training' : 'Start Cybersecurity Training'}
-        </button>
-        
-        {(selectedRoles.length === 0 || !selectedScenario || !playerName) && (
-          <p className="mt-2 text-sm text-gray-500">
-            Please complete all setup steps to begin
-          </p>
-        )}
-      </div>
+          {/* Start Game Button - Only for Single Player */}
+          <div className="text-center">
+            <button
+              onClick={handleStartGame}
+              disabled={selectedRoles.length === 0 || !selectedScenario || !playerName}
+              className="px-6 py-3 bg-primary-500 text-white rounded-lg hover:bg-primary-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+            >
+              {projectType === 'custom' && !selectedProject ? 'Save Project & Start Solo Training' : 'Start Solo Training'}
+            </button>
+            
+            {(selectedRoles.length === 0 || !selectedScenario || !playerName) && (
+              <p className="mt-2 text-sm text-gray-500">
+                Please complete all setup steps to begin
+              </p>
+            )}
+          </div>
+        </>
+      )}
 
       {/* Save Project Modal */}
       {showSaveProject && (

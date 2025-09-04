@@ -36,10 +36,14 @@ const ScenarioEditor = ({ onClose, onSave }) => {
 
   const loadCustomRoles = async () => {
     try {
-      const response = await fetch('http://localhost:8787/api/custom-roles')
+      const apiUrl = '/api/custom-roles'
+      const response = await fetch(apiUrl)
       if (response.ok) {
         const customRolesData = await response.json()
+        console.log('Loaded custom roles:', customRolesData)
         setCustomRoles(customRolesData)
+      } else {
+        console.error('Failed to load custom roles:', response.status)
       }
     } catch (error) {
       console.error('Error loading custom roles:', error)

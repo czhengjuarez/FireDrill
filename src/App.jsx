@@ -2,16 +2,21 @@ import { useState } from 'react'
 import './App.css'
 import GameSetup from './components/GameSetup'
 import GameBoard from './components/GameBoard'
+import MultiplayerSetup from './components/MultiplayerSetup'
+import FacilitatorDashboard from './components/FacilitatorDashboard'
+import ParticipantInterface from './components/ParticipantInterface'
 import Icon from './components/Icon'
 import { roles, scenarios } from './data/gameData'
 
 function App() {
-  const [gameState, setGameState] = useState('setup') // 'setup', 'playing', 'completed'
+  const [gameState, setGameState] = useState('setup') // 'setup', 'playing', 'completed', 'multiplayer-setup', 'facilitator', 'participant'
   const [selectedRoles, setSelectedRoles] = useState([])
   const [selectedScenario, setSelectedScenario] = useState(null)
   const [currentInject, setCurrentInject] = useState(0)
   const [gameLog, setGameLog] = useState([])
   const [playerName, setPlayerName] = useState('')
+  const [currentSession, setCurrentSession] = useState(null)
+  const [participantData, setParticipantData] = useState(null)
 
   const startGame = (roles, scenario, name) => {
     setSelectedRoles(roles)
@@ -29,10 +34,40 @@ function App() {
     setCurrentInject(0)
     setGameLog([])
     setPlayerName('')
+    setCurrentSession(null)
+    setParticipantData(null)
   }
 
   const addToGameLog = (entry) => {
     setGameLog(prev => [...prev, { ...entry, timestamp: new Date().toLocaleTimeString() }])
+  }
+
+  const startMultiplayerSetup = () => {
+    setGameState('multiplayer-setup')
+  }
+
+  const startFacilitatorSession = (session, availableRoles) => {
+    setCurrentSession(session)
+    setGameState('facilitator')
+  }
+
+  const joinParticipantSession = (session, participantName) => {
+    setCurrentSession(session)
+    setParticipantData({
+      userId: `participant_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      name: participantName
+    })
+    setGameState('participant')
+  }
+
+  const updateSession = (sessionData) => {
+    setCurrentSession(prev => ({ ...prev, ...sessionData }))
+  }
+
+  const endSession = () => {
+    setCurrentSession(null)
+    setParticipantData(null)
+    setGameState('setup')
   }
 
   return (
@@ -58,6 +93,7 @@ function App() {
         {gameState === 'setup' && (
           <GameSetup 
             onStartGame={startGame}
+            onStartMultiplayer={startMultiplayerSetup}
             roles={roles}
             scenarios={scenarios}
           />
@@ -73,6 +109,32 @@ function App() {
             addToGameLog={addToGameLog}
             onResetGame={resetGame}
             playerName={playerName}
+          />
+        )}
+
+        {gameState === 'multiplayer-setup' && (
+          <MultiplayerSetup
+            onStartSession={startFacilitatorSession}
+            onJoinSession={joinParticipantSession}
+            roles={roles}
+            scenarios={scenarios}
+          />
+        )}
+
+        {gameState === 'facilitator' && currentSession && (
+          <FacilitatorDashboard
+            session={currentSession}
+            onUpdateSession={updateSession}
+            onEndSession={endSession}
+          />
+        )}
+
+        {gameState === 'participant' && currentSession && participantData && (
+          <ParticipantInterface
+            session={currentSession}
+            participantData={participantData}
+            onLeaveSession={endSession}
+            roles={roles}
           />
         )}
       </main>
