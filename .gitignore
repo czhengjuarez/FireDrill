@@ -24,3 +24,7 @@ dist-ssr
 *.sw?
 temp-update.cjs
 update-worker.js
+
+# Wrangler local development files
+.wrangler/
+!.wrangler/wrangler.toml
