@@ -29,7 +29,9 @@ const CustomCardEditor = ({ project, onSave, onClose }) => {
       const response = await fetch('/api/custom-roles');
       if (response.ok) {
         const roles = await response.json();
-        setCustomRoles(roles);
+        // Mark all fetched roles as custom
+        const rolesWithCustomFlag = roles.map(role => ({ ...role, isCustom: true }));
+        setCustomRoles(rolesWithCustomFlag);
       }
     } catch (error) {
       console.error('Failed to load custom roles:', error);
