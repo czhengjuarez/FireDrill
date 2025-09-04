@@ -20,7 +20,9 @@ const CustomRoleManager = ({ onClose }) => {
       const response = await fetch('/api/custom-roles');
       if (response.ok) {
         const roles = await response.json();
-        setCustomRoles(roles);
+        // Mark all fetched roles as custom
+        const rolesWithCustomFlag = roles.map(role => ({ ...role, isCustom: true }));
+        setCustomRoles(rolesWithCustomFlag);
       }
     } catch (error) {
       console.error('Failed to load custom roles:', error);
@@ -191,7 +193,6 @@ const CustomRoleManager = ({ onClose }) => {
                 >
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex items-center space-x-3">
-                      <Icon name={role.icon || 'user'} className="w-6 h-6 text-gray-700" />
                       <h4 className="font-semibold text-gray-900">{role.name}</h4>
                     </div>
                     <button

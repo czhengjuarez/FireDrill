@@ -22,6 +22,13 @@ export const roles = [
     icon: 'users'
   },
   {
+    id: 'incident-commander',
+    name: 'Incident Commander',
+    description: 'Overall incident response leader who coordinates all response activities, makes critical decisions, and ensures effective communication between all teams.',
+    color: 'bg-red-600',
+    icon: 'user'
+  },
+  {
     id: 'it',
     name: 'Information Technology',
     description: 'Manages technical infrastructure, system recovery, and IT security measures.',

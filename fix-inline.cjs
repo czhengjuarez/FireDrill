@@ -1,8 +1,8 @@
 const fs = require('fs');
 
 // Read the built files
-const cssContent = fs.readFileSync('dist/assets/index-Kj7OrdyV.css', 'utf8');
-const jsContent = fs.readFileSync('dist/assets/index-DGW7fwBM.js', 'utf8');
+const cssContent = fs.readFileSync('dist/assets/index-DiYh828e.css', 'utf8');
+const jsContent = fs.readFileSync('dist/assets/index-BixHGpWc.js', 'utf8');
 
 // Create the new inline HTML
 const newInlineHtml = `<!DOCTYPE html>

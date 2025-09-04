@@ -41,7 +41,9 @@ const ScenarioEditor = ({ onClose, onSave }) => {
       if (response.ok) {
         const customRolesData = await response.json()
         console.log('Loaded custom roles:', customRolesData)
-        setCustomRoles(customRolesData)
+        // Mark all fetched roles as custom
+        const rolesWithCustomFlag = customRolesData.map(role => ({ ...role, isCustom: true }))
+        setCustomRoles(rolesWithCustomFlag)
       } else {
         console.error('Failed to load custom roles:', response.status)
       }

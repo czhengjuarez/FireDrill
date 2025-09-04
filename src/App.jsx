@@ -3,13 +3,14 @@ import './App.css'
 import GameSetup from './components/GameSetup'
 import GameBoard from './components/GameBoard'
 import MultiplayerSetup from './components/MultiplayerSetup'
+import CustomMultiplayerSetup from './components/CustomMultiplayerSetup'
 import FacilitatorDashboard from './components/FacilitatorDashboard'
 import ParticipantInterface from './components/ParticipantInterface'
 import Icon from './components/Icon'
 import { roles, scenarios } from './data/gameData'
 
 function App() {
-  const [gameState, setGameState] = useState('setup') // 'setup', 'playing', 'completed', 'multiplayer-setup', 'facilitator', 'participant'
+  const [gameState, setGameState] = useState('setup') // 'setup', 'playing', 'completed', 'multiplayer-setup', 'custom-multiplayer-setup', 'facilitator', 'participant'
   const [selectedRoles, setSelectedRoles] = useState([])
   const [selectedScenario, setSelectedScenario] = useState(null)
   const [currentInject, setCurrentInject] = useState(0)
@@ -46,7 +47,27 @@ function App() {
     setGameState('multiplayer-setup')
   }
 
+  const startCustomMultiplayerSetup = () => {
+    setGameState('custom-multiplayer-setup')
+  }
+
   const startFacilitatorSession = (session, availableRoles) => {
+    setCurrentSession(session)
+    setGameState('facilitator')
+  }
+
+  const startCustomFacilitatorSession = (sessionData) => {
+    // Create session object compatible with FacilitatorDashboard
+    const session = {
+      id: `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      facilitator_name: sessionData.facilitatorName,
+      scenario_data: sessionData.selectedScenario,
+      available_roles: sessionData.selectedRoles,
+      participants: [],
+      status: 'waiting',
+      created_at: new Date().toISOString(),
+      isCustomProject: true
+    }
     setCurrentSession(session)
     setGameState('facilitator')
   }
@@ -94,6 +115,7 @@ function App() {
           <GameSetup 
             onStartGame={startGame}
             onStartMultiplayer={startMultiplayerSetup}
+            onStartCustomMultiplayer={startCustomMultiplayerSetup}
             roles={roles}
             scenarios={scenarios}
           />
@@ -116,6 +138,14 @@ function App() {
           <MultiplayerSetup
             onStartSession={startFacilitatorSession}
             onJoinSession={joinParticipantSession}
+            roles={roles}
+            scenarios={scenarios}
+          />
+        )}
+
+        {gameState === 'custom-multiplayer-setup' && (
+          <CustomMultiplayerSetup
+            onStartSession={startCustomFacilitatorSession}
             roles={roles}
             scenarios={scenarios}
           />

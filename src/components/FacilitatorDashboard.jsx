@@ -8,7 +8,7 @@ const FacilitatorDashboard = ({ session, onUpdateSession, onEndSession }) => {
   const [sessionLog, setSessionLog] = useState(session.session_log || []);
   const [participants, setParticipants] = useState(session.participants || []);
   const [responses, setResponses] = useState(session.responses || {});
-  const [phase, setPhase] = useState(session.phase || 'setup');
+  const [phase, setPhase] = useState(session.phase || (session.isCustomProject ? 'ready' : 'setup'));
 
   // Get inject cards for the current scenario
   const scenarioInjects = injectCards[session.scenario_data?.id] || [];
@@ -135,9 +135,10 @@ const FacilitatorDashboard = ({ session, onUpdateSession, onEndSession }) => {
             <div>
               <h1 className="text-2xl font-bold text-gray-900">Facilitator Dashboard</h1>
               <p className="text-gray-600">
-                Session: <span className="font-mono font-semibold">{session.session_code}</span> | 
+                Session: <span className="font-mono font-semibold">{session.session_code || session.id}</span> | 
                 Scenario: {session.scenario_data?.name} | 
-                Phase: <span className="capitalize">{phase}</span>
+                Phase: <span className="capitalize">{phase === 'ready' ? 'Ready to Start' : phase}</span>
+                {session.isCustomProject && <span className="ml-2 px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">Custom Project</span>}
               </p>
             </div>
             <div className="flex space-x-3">
@@ -169,8 +170,24 @@ const FacilitatorDashboard = ({ session, onUpdateSession, onEndSession }) => {
             {/* Phase Controls */}
             <div className="bg-white rounded-lg shadow p-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Session Control</h3>
+              
+              {/* Custom Project Ready State */}
+              {session.isCustomProject && phase === 'ready' && (
+                <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg">
+                  <div className="flex items-center">
+                    <Icon name="check" className="w-5 h-5 text-green-500 mr-2" />
+                    <div>
+                      <h4 className="text-sm font-medium text-green-800">Session Ready</h4>
+                      <p className="text-sm text-green-700">
+                        Pre-configured with {session.available_roles?.length || 0} roles and scenario: {session.scenario_data?.name}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+              
               <div className="flex space-x-3">
-                {phase === 'setup' && (
+                {(phase === 'setup' || phase === 'ready') && (
                   <button
                     onClick={startSession}
                     className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors"
