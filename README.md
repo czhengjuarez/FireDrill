@@ -168,9 +168,6 @@ database_id = "your-database-id"
 
 This project is licensed under the MIT License - see the LICENSE file for details.
 
-## 🆘 Support
-
-For support, please open an issue on GitHub or contact the development team.
 
 ---
 
