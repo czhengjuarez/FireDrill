@@ -14,6 +14,7 @@ const CustomMultiplayerSetup = ({ onStartSession, roles, scenarios }) => {
   const [customRoles, setCustomRoles] = useState([])
   const [customScenarios, setCustomScenarios] = useState([])
   const [loadingProjects, setLoadingProjects] = useState(false)
+  const [validationError, setValidationError] = useState('')
   const [showRoleManager, setShowRoleManager] = useState(false)
   const [showScenarioEditor, setShowScenarioEditor] = useState(false)
 
@@ -147,8 +148,17 @@ const CustomMultiplayerSetup = ({ onStartSession, roles, scenarios }) => {
   }
 
   const handleStartSession = async () => {
-    if (selectedRoles.length === 0 || !selectedScenario || !facilitatorName) {
-      alert('Please select at least one role, a scenario, and enter facilitator name.')
+    // Clear previous validation error
+    setValidationError('')
+    
+    const missingFields = []
+    if (selectedRoles.length === 0) missingFields.push('at least one role')
+    if (!selectedScenario) missingFields.push('a scenario')
+    if (!facilitatorName.trim()) missingFields.push('facilitator name')
+    
+    if (missingFields.length > 0) {
+      const errorMessage = `Please select ${missingFields.join(', ')}.`
+      setValidationError(errorMessage)
       return
     }
 
@@ -378,16 +388,19 @@ const CustomMultiplayerSetup = ({ onStartSession, roles, scenarios }) => {
         <div className="text-center">
           <button
             onClick={handleStartSession}
-            disabled={selectedRoles.length === 0 || !selectedScenario || !facilitatorName}
-            className="px-8 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors font-medium"
+            className="px-8 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
           >
             Start Multiplayer Session
           </button>
           
-          {(selectedRoles.length === 0 || !selectedScenario || !facilitatorName) && (
-            <p className="mt-2 text-sm text-gray-500">
-              Please complete all required fields to continue
-            </p>
+          {validationError && (
+            <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg flex items-center space-x-2">
+              <svg className="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24" fill="none">
+                <circle cx="12" cy="12" r="10" fill="#DC2626" />
+                <path d="M12 8v4M12 16h.01" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+              <p className="text-sm text-red-700">{validationError}</p>
+            </div>
           )}
         </div>
       </div>

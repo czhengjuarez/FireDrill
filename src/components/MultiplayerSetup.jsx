@@ -9,11 +9,21 @@ const MultiplayerSetup = ({ onStartSession, onJoinSession, roles, scenarios }) =
   const [sessionCode, setSessionCode] = useState('');
   const [participantName, setParticipantName] = useState('');
   const [loading, setLoading] = useState(false);
+  const [validationError, setValidationError] = useState('');
 
   const handleCreateSession = async () => {
-    if (!facilitatorName.trim() || !selectedScenario || selectedRoles.length === 0) {
-      alert('Please fill in all required fields');
-      return;
+    // Clear previous validation error
+    setValidationError('');
+    
+    const missingFields = []
+    if (!facilitatorName.trim()) missingFields.push('facilitator name')
+    if (!selectedScenario) missingFields.push('a scenario')
+    if (selectedRoles.length === 0) missingFields.push('at least one role')
+    
+    if (missingFields.length > 0) {
+      const errorMessage = `Please enter ${missingFields.join(', ')}.`
+      setValidationError(errorMessage)
+      return
     }
 
     setLoading(true);
@@ -209,7 +219,7 @@ const MultiplayerSetup = ({ onStartSession, onJoinSession, roles, scenarios }) =
           <div className="text-center">
             <button
               onClick={handleCreateSession}
-              disabled={!facilitatorName.trim() || !selectedScenario || selectedRoles.length === 0 || loading}
+              disabled={loading}
               className="px-8 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
             >
               {loading ? (
@@ -224,6 +234,16 @@ const MultiplayerSetup = ({ onStartSession, onJoinSession, roles, scenarios }) =
                 </>
               )}
             </button>
+            
+            {validationError && (
+              <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg flex items-center space-x-2">
+                <svg className="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24" fill="none">
+                  <circle cx="12" cy="12" r="10" fill="#DC2626" />
+                  <path d="M12 8v4M12 16h.01" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+                <p className="text-sm text-red-700">{validationError}</p>
+              </div>
+            )}
           </div>
         </div>
       ) : (

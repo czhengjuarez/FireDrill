@@ -6,10 +6,10 @@ compatibility_date = "2023-12-01"
 # Use: wrangler dev --config config.local.toml
 # For production, use environment variables or secrets
 
-# Variables for development - You need to replace this with your actual Google Client ID
-# from your config.local.toml file. The current placeholder will cause 500 errors.
+# Variables for development - Use environment variables or secrets for production
 [vars]
-GOOGLE_CLIENT_ID = "YOUR_GOOGLE_CLIENT_ID_HERE"
+# GOOGLE_CLIENT_ID = "your-google-client-id"
+# GOOGLE_CLIENT_SECRET = "your-google-client-secret"
 
 [[d1_databases]]
 binding = "DB"

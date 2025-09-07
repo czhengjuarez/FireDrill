@@ -21,6 +21,7 @@ const GameSetup = ({ onStartGame, onStartMultiplayer, onStartCustomMultiplayer, 
   const [showRoleManager, setShowRoleManager] = useState(false)
   const [scenarioFilter, setScenarioFilter] = useState('all') // 'all', 'default', 'custom'
   const [loadingProjects, setLoadingProjects] = useState(false)
+  const [validationError, setValidationError] = useState('')
 
   const toggleRole = (roleId) => {
     setSelectedRoles(prev => 
@@ -31,8 +32,17 @@ const GameSetup = ({ onStartGame, onStartMultiplayer, onStartCustomMultiplayer, 
   }
 
   const handleStartGame = () => {
-    if (selectedRoles.length === 0 || !selectedScenario || !playerName) {
-      alert('Please select at least one role, a scenario, and enter your name.')
+    // Clear previous validation error
+    setValidationError('')
+    
+    const missingFields = []
+    if (selectedRoles.length === 0) missingFields.push('at least one role')
+    if (!selectedScenario) missingFields.push('a scenario')
+    if (!playerName.trim()) missingFields.push('your name')
+    
+    if (missingFields.length > 0) {
+      const errorMessage = `Please select ${missingFields.join(', ')}.`
+      setValidationError(errorMessage)
       return
     }
     
@@ -645,16 +655,19 @@ const GameSetup = ({ onStartGame, onStartMultiplayer, onStartCustomMultiplayer, 
           <div className="text-center">
             <button
               onClick={handleStartGame}
-              disabled={selectedRoles.length === 0 || !selectedScenario || !playerName}
-              className="px-6 py-3 bg-primary-500 text-white rounded-lg hover:bg-primary-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+              className="px-6 py-3 bg-primary-500 text-white rounded-lg hover:bg-primary-600 transition-colors"
             >
               {projectType === 'custom' && !selectedProject ? 'Save Project & Start Solo Training' : 'Start Solo Training'}
             </button>
             
-            {(selectedRoles.length === 0 || !selectedScenario || !playerName) && (
-              <p className="mt-2 text-sm text-gray-500">
-                Please complete all setup steps to begin
-              </p>
+            {validationError && (
+              <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg flex items-center space-x-2">
+                <svg className="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24" fill="none">
+                  <circle cx="12" cy="12" r="10" fill="#DC2626" />
+                  <path d="M12 8v4M12 16h.01" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+                <p className="text-sm text-red-700">{validationError}</p>
+              </div>
             )}
           </div>
         </>
