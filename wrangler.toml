@@ -2,6 +2,15 @@ name = "fire-drill"
 main = "workers-site/index.js"
 compatibility_date = "2023-12-01"
 
+# Import local configuration for development
+# Use: wrangler dev --config config.local.toml
+# For production, use environment variables or secrets
+
+# Variables for development - You need to replace this with your actual Google Client ID
+# from your config.local.toml file. The current placeholder will cause 500 errors.
+[vars]
+GOOGLE_CLIENT_ID = "YOUR_GOOGLE_CLIENT_ID_HERE"
+
 [[d1_databases]]
 binding = "DB"
 database_name = "fire-drill-db"
