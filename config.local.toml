@@ -1,0 +1,6 @@
+# Google OAuth Configuration
+# This file contains sensitive credentials and should not be committed to git
+
+[vars]
+GOOGLE_CLIENT_ID = "1051145498673-8b5igbve6snjh22554hl3r4l6vldf39v.apps.googleusercontent.com"
+GOOGLE_CLIENT_SECRET = "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"

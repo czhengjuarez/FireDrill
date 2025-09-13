@@ -1,5 +1,8 @@
 import { useState } from 'react'
 import './App.css'
+import { AuthProvider, useAuth } from './contexts/AuthContext'
+import LoginPage from './components/LoginPage'
+import UserProfile from './components/UserProfile'
 import GameSetup from './components/GameSetup'
 import GameBoard from './components/GameBoard'
 import MultiplayerSetup from './components/MultiplayerSetup'
@@ -9,7 +12,8 @@ import ParticipantInterface from './components/ParticipantInterface'
 import Icon from './components/Icon'
 import { roles, scenarios } from './data/gameData'
 
-function App() {
+const AppContent = () => {
+  const { user, loading } = useAuth();
   const [gameState, setGameState] = useState('setup') // 'setup', 'playing', 'completed', 'multiplayer-setup', 'custom-multiplayer-setup', 'facilitator', 'participant'
   const [selectedRoles, setSelectedRoles] = useState([])
   const [selectedScenario, setSelectedScenario] = useState(null)
@@ -18,6 +22,21 @@ function App() {
   const [playerName, setPlayerName] = useState('')
   const [currentSession, setCurrentSession] = useState(null)
   const [participantData, setParticipantData] = useState(null)
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <LoginPage />;
+  }
 
   const startGame = (roles, scenario, name) => {
     setSelectedRoles(roles)
@@ -100,11 +119,13 @@ function App() {
               onClick={resetGame}
               className="flex items-center space-x-3 cursor-pointer"
             >
-              <Icon name="shield" className="w-8 h-8 text-primary-500" />
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 2L13.09 8.26L20 9L13.09 15.74L12 22L10.91 15.74L4 9L10.91 8.26L12 2Z" fill="#8E1F5A"/>
+              </svg>
               <h1 className="text-2xl font-bold text-gray-900">Fire Drill</h1>
             </div>
             <div className="flex items-center space-x-4">
-              {/* Header navigation removed - projects managed in GameSetup */}
+              <UserProfile />
             </div>
           </div>
         </div>
@@ -136,7 +157,7 @@ function App() {
 
         {gameState === 'multiplayer-setup' && (
           <MultiplayerSetup
-            onStartSession={startFacilitatorSession}
+            onStartGame={startFacilitatorSession}
             onJoinSession={joinParticipantSession}
             roles={roles}
             scenarios={scenarios}
@@ -170,6 +191,14 @@ function App() {
       </main>
     </div>
   )
+}
+
+function App() {
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
+  );
 }
 
 export default App

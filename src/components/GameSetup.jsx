@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useAuth } from '../contexts/AuthContext'
 import ScenarioEditor from './ScenarioEditor'
 import ScenarioManager from './ScenarioManager'
 import CustomRoleManager from './CustomRoleManager'
@@ -6,6 +7,7 @@ import Icon from './Icon'
 import { loadCustomScenarios, saveCustomScenarios } from '../utils/scenarioStorage'
 
 const GameSetup = ({ onStartGame, onStartMultiplayer, onStartCustomMultiplayer, roles, scenarios }) => {
+  const { authenticatedFetch } = useAuth();
   const [selectedRoles, setSelectedRoles] = useState([])
   const [selectedScenario, setSelectedScenario] = useState(null)
   const [playerName, setPlayerName] = useState('')
@@ -75,7 +77,7 @@ const GameSetup = ({ onStartGame, onStartMultiplayer, onStartCustomMultiplayer, 
 
   const loadCustomRoles = async () => {
     try {
-      const response = await fetch('/api/custom-roles')
+      const response = await authenticatedFetch('/api/custom-roles')
       if (response.ok) {
         const customRolesData = await response.json()
         // Mark all fetched roles as custom
@@ -90,7 +92,7 @@ const GameSetup = ({ onStartGame, onStartMultiplayer, onStartCustomMultiplayer, 
   const loadSavedProjects = async () => {
     setLoadingProjects(true);
     try {
-      const response = await fetch('/api/projects');
+      const response = await authenticatedFetch('/api/projects');
       if (response.ok) {
         const projects = await response.json();
         console.log('Loaded projects:', projects);
@@ -146,9 +148,8 @@ const GameSetup = ({ onStartGame, onStartMultiplayer, onStartCustomMultiplayer, 
     console.log('Project data to save:', projectData)
 
     try {
-      const response = await fetch('/api/projects', {
+      const response = await authenticatedFetch('/api/projects', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(projectData)
       })
 
@@ -179,7 +180,7 @@ const GameSetup = ({ onStartGame, onStartMultiplayer, onStartCustomMultiplayer, 
 
     try {
       const apiUrl = `/api/projects/${projectId}`
-      const response = await fetch(apiUrl, {
+      const response = await authenticatedFetch(apiUrl, {
         method: 'DELETE'
       })
 
