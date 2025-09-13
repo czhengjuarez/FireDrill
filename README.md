@@ -58,8 +58,8 @@ The application uses a serverless architecture with:
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/czhengjuarez/CyberSecurityFireDrill.git
-   cd CyberSecurityFireDrill
+   git clone https://github.com/czhengjuarez/FireDrill.git
+   cd FireDrill
    ```
 
 2. **Install dependencies**
